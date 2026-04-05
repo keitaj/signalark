@@ -3,8 +3,8 @@
 //
 // Usage:
 //
-//	signalark -port /dev/ttyACM0 -dir ./collect -csv
-//	signalark -dir ./collect -csv -rotate 1h
+//	signalark -dir ./collect -csv -mobility static -skyvis open
+//	signalark -dir ./collect -csv -rotate 1h -mobility walk -skyvis urban
 //	signalark -port /dev/ttyACM0 -out capture.ubx
 package main
 
@@ -36,9 +36,12 @@ func main() {
 	csvFlag := flag.Bool("csv", false, "Enable CSV output (requires -dir)")
 	rotateStr := flag.String("rotate", "", "File rotation interval (e.g., 1h, 30m)")
 	quiet := flag.Bool("quiet", false, "Suppress console output")
-	location := flag.String("location", "", "Collection location (metadata)")
 	antenna := flag.String("antenna", "", "Antenna description (metadata)")
-	notes := flag.String("notes", "", "Additional notes (metadata)")
+	mobility := flag.String("mobility", "", "Mobility mode: static, walk, drive")
+	skyvis := flag.String("skyvis", "", "Sky visibility: open, suburban, urban, canyon, indoor, tunnel")
+	weather := flag.String("weather", "", "Weather: clear, cloudy, rain, snow")
+	anomaly := flag.String("anomaly", "normal", "Anomaly label: normal, spoofing, jamming")
+	notes := flag.String("notes", "", "Free-form notes (e.g., location name, conditions)")
 	flag.Parse()
 
 	if *measRate <= 0 {
@@ -86,6 +89,7 @@ func main() {
 	var reader io.Reader = p
 	var rec *recorder
 	var csvW *csvWriters
+	var meta *metadata
 
 	if *outDir != "" {
 		// Create directory structure
@@ -117,7 +121,8 @@ func main() {
 		}
 
 		// Metadata
-		if err := writeMetadata(*outDir, *portName, *baudRate, *measRate, *location, *antenna, *notes); err != nil {
+		meta = newMetadata(*outDir, *portName, *baudRate, *measRate, *antenna, *mobility, *skyvis, *weather, *anomaly, *notes)
+		if err := meta.Write(); err != nil {
 			log.Fatalf("Failed to write metadata: %v", err)
 		}
 	} else if *outFile != "" {
@@ -156,6 +161,13 @@ func main() {
 		}
 		msgCount.Add(1)
 
+		// Record start position from first valid fix
+		if meta != nil {
+			if pvt, ok := msg.(*ubx.NavPVT); ok {
+				meta.RecordStartPosition(pvt)
+			}
+		}
+
 		if csvW != nil {
 			csvW.WriteMessage(msg)
 		}
@@ -163,6 +175,11 @@ func main() {
 		if !*quiet {
 			printMessage(msg)
 		}
+	}
+
+	// Re-write metadata with startLat/startLon
+	if meta != nil {
+		meta.Write()
 	}
 
 	fmt.Fprintf(os.Stderr, "\n\nReceived %d messages total\n", msgCount.Load())

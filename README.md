@@ -9,20 +9,31 @@ Built on [go-ubx](https://github.com/keitaj/go-ubx).
 - Raw UBX binary recording with auto-generated timestamped filenames
 - File rotation (`-rotate 1h` for hourly splits)
 - Structured CSV output for NAV-PVT, NAV-SIG, MON-RF, RXM-RAWX
-- Metadata recording (port, baud rate, location, antenna)
+- Session labels for ML training data (`-mobility`, `-skyvis`, `-weather`, `-anomaly`)
+- Auto-recorded start position (lat/lon from first NAV-PVT fix)
+- Metadata recording (`metadata.json`)
 - Serial port auto-detection (Linux `/dev/ttyACM*`, macOS `/dev/cu.usbmodem*`)
 - Receiver auto-configuration (enables NAV-PVT, NAV-SIG, RXM-RAWX, MON-RF, RXM-SFRBX)
 
 ## Usage
 
 ```bash
-# Structured collection with CSV output
-signalark -port /dev/ttyACM0 -dir ./collect -csv
+# Static observation, open sky
+signalark -dir ./collect/session_001 -csv \
+  -mobility static -skyvis open \
+  -antenna patch -notes "Seya Park, clear sky, tripod"
 
-# With file rotation and metadata
-signalark -dir ./collect -csv -rotate 1h -location "Seya, Yokohama" -antenna "ANN-MB-00"
+# Walking in urban area
+signalark -dir ./collect/session_002 -csv \
+  -mobility walk -skyvis urban \
+  -antenna patch -notes "Yokohama Station west exit"
 
-# Simple raw capture (ubxcap-compatible)
+# Driving with roof antenna
+signalark -dir ./collect/session_003 -csv \
+  -mobility drive -skyvis open \
+  -antenna magnet_roof -notes "Hodogaya Bypass"
+
+# Simple raw capture (no session labels)
 signalark -port /dev/ttyACM0 -out capture.ubx
 
 # Auto-detect port, 10Hz, quiet mode
@@ -34,7 +45,7 @@ signalark -dir ./collect -csv -rate 100 -quiet
 When using `-dir`, signalark creates:
 
 ```
-collect/
+session_001/
 ├── raw/
 │   ├── gnss_20260407_120000.ubx   # Raw binary (rotated if -rotate set)
 │   └── gnss_20260407_130000.ubx
@@ -43,7 +54,7 @@ collect/
 │   ├── nav_sig.csv                # Per-signal quality and health
 │   ├── mon_rf.csv                 # RF/jamming indicators
 │   └── rxm_rawx.csv              # Raw measurements
-└── metadata.json                  # Collection conditions
+└── metadata.json                  # Collection conditions + session labels
 ```
 
 ## Flags
@@ -58,9 +69,12 @@ collect/
 | `-csv` | false | Enable CSV output (requires `-dir`) |
 | `-rotate` | | File rotation interval (e.g., `1h`, `30m`) |
 | `-quiet` | false | Suppress console output |
-| `-location` | | Collection location (metadata) |
-| `-antenna` | | Antenna description (metadata) |
-| `-notes` | | Additional notes (metadata) |
+| `-antenna` | | Antenna description |
+| `-mobility` | | Mobility mode: `static`, `walk`, `drive` |
+| `-skyvis` | | Sky visibility: `open`, `suburban`, `urban`, `canyon`, `indoor`, `tunnel` |
+| `-weather` | | Weather: `clear`, `cloudy`, `rain`, `snow` |
+| `-anomaly` | `normal` | Anomaly label: `normal`, `spoofing`, `jamming` |
+| `-notes` | | Free-form notes (location name, conditions, etc.) |
 
 ## Install
 
