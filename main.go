@@ -85,6 +85,13 @@ func main() {
 	// Configure receiver
 	configure(p, *measRate)
 
+	// Run startup health check in structured collection mode
+	if *outDir != "" {
+		if err := runHealthCheck(p, 60*time.Second); err != nil {
+			fmt.Fprintf(os.Stderr, "Health check error: %v\n", err)
+		}
+	}
+
 	// Set up output
 	var reader io.Reader = p
 	var rec *recorder
