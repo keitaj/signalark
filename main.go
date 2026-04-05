@@ -153,6 +153,7 @@ func main() {
 	// Decode loop
 	dec := ubx.NewDecoder(reader)
 	var msgCount atomic.Int64
+	var sum sessionSummary
 
 	for {
 		msg, err := dec.Decode()
@@ -161,11 +162,14 @@ func main() {
 		}
 		msgCount.Add(1)
 
-		// Record start position from first valid fix
-		if meta != nil {
-			if pvt, ok := msg.(*ubx.NavPVT); ok {
-				meta.RecordStartPosition(pvt)
+		switch m := msg.(type) {
+		case *ubx.NavPVT:
+			sum.RecordPVT(m)
+			if meta != nil {
+				meta.RecordStartPosition(m)
 			}
+		case *ubx.NavSig:
+			sum.RecordSig(m)
 		}
 
 		if csvW != nil {
@@ -177,12 +181,24 @@ func main() {
 		}
 	}
 
-	// Re-write metadata with startLat/startLon
+	// Print session summary
+	fmt.Fprintln(os.Stderr)
+	sum.Print()
+
+	// Re-write metadata with session summary
 	if meta != nil {
+		meta.DurationSec = sum.Duration().Seconds()
+		meta.TotalEpochs = sum.totalEpochs
+		meta.FixRate = sum.FixRate()
+		if sum.cnoCount > 0 {
+			meta.CnoMin = sum.cnoMin
+			meta.CnoAvg = sum.CnoAvg()
+			meta.CnoMax = sum.cnoMax
+		}
 		meta.Write()
 	}
 
-	fmt.Fprintf(os.Stderr, "\n\nReceived %d messages total\n", msgCount.Load())
+	fmt.Fprintf(os.Stderr, "\nReceived %d messages total\n", msgCount.Load())
 }
 
 func detectPort() string {

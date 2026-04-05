@@ -24,8 +24,14 @@ type metadata struct {
 	Weather    string   `json:"weather,omitempty"`
 	Anomaly    string   `json:"anomaly,omitempty"`
 	Notes      string   `json:"notes,omitempty"`
-	StartLat   float64  `json:"startLat,omitempty"`
-	StartLon   float64  `json:"startLon,omitempty"`
+	StartLat    float64  `json:"startLat,omitempty"`
+	StartLon    float64  `json:"startLon,omitempty"`
+	DurationSec float64  `json:"durationSec,omitempty"`
+	TotalEpochs int      `json:"totalEpochs,omitempty"`
+	FixRate     float64  `json:"fixRate,omitempty"`
+	CnoMin      uint8    `json:"cnoMin,omitempty"`
+	CnoAvg      float64  `json:"cnoAvg,omitempty"`
+	CnoMax      uint8    `json:"cnoMax,omitempty"`
 
 	dir  string
 	once sync.Once
