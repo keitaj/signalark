@@ -169,6 +169,7 @@ func main() {
 		case <-ticker.C:
 			if rec != nil {
 				rec.Sync()
+				fmt.Fprintf(os.Stderr, "\r  [raw: %s]", rec.SizeString())
 			}
 			if csvW != nil {
 				csvW.Flush()
@@ -198,6 +199,12 @@ func main() {
 	}
 
 	fmt.Fprintf(os.Stderr, "\n\nReceived %d messages total\n", msgCount.Load())
+	if rec != nil {
+		fmt.Fprintf(os.Stderr, "  Raw data: %s\n", rec.SizeString())
+		if rec.WriteErrors() > 0 {
+			fmt.Fprintf(os.Stderr, "  WARNING: %d write errors occurred\n", rec.WriteErrors())
+		}
+	}
 }
 
 func detectPort() string {
