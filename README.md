@@ -11,6 +11,9 @@ Built on [go-ubx](https://github.com/keitaj/go-ubx).
 - Structured CSV output for NAV-PVT, NAV-SIG, MON-RF, RXM-RAWX
 - Session labels for ML training data (`-mobility`, `-skyvis`, `-weather`, `-anomaly`)
 - Auto-recorded start position (lat/lon from first NAV-PVT fix)
+- Periodic status display (epochs, fix rate, CN0, file size every 10s)
+- Periodic flush (CSV + raw binary every 10s to minimize data loss)
+- Write error logging with running count
 - Metadata recording (`metadata.json`)
 - Serial port auto-detection (Linux `/dev/ttyACM*`, macOS `/dev/cu.usbmodem*`)
 - Receiver auto-configuration (enables NAV-PVT, NAV-SIG, RXM-RAWX, MON-RF, RXM-SFRBX)

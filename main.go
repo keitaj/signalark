@@ -153,6 +153,7 @@ func main() {
 	// Decode loop
 	dec := ubx.NewDecoder(reader)
 	var msgCount atomic.Int64
+	status := newStatusTracker()
 
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
@@ -164,7 +165,18 @@ func main() {
 		}
 		msgCount.Add(1)
 
-		// Periodic flush to reduce data loss on crash or disconnect.
+		// Track statistics
+		switch m := msg.(type) {
+		case *ubx.NavPVT:
+			status.RecordPVT(m)
+			if meta != nil {
+				meta.RecordStartPosition(m)
+			}
+		case *ubx.NavSig:
+			status.RecordSig(m)
+		}
+
+		// Periodic flush + status display
 		select {
 		case <-ticker.C:
 			if rec != nil {
@@ -173,14 +185,8 @@ func main() {
 			if csvW != nil {
 				csvW.Flush()
 			}
+			status.Print(rec)
 		default:
-		}
-
-		// Record start position from first valid fix
-		if meta != nil {
-			if pvt, ok := msg.(*ubx.NavPVT); ok {
-				meta.RecordStartPosition(pvt)
-			}
 		}
 
 		if csvW != nil {
@@ -198,6 +204,12 @@ func main() {
 	}
 
 	fmt.Fprintf(os.Stderr, "\n\nReceived %d messages total\n", msgCount.Load())
+	if rec != nil {
+		fmt.Fprintf(os.Stderr, "  Raw data: %s\n", rec.SizeString())
+		if rec.WriteErrors() > 0 {
+			fmt.Fprintf(os.Stderr, "  WARNING: %d write errors occurred\n", rec.WriteErrors())
+		}
+	}
 }
 
 func detectPort() string {
