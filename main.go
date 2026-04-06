@@ -154,12 +154,27 @@ func main() {
 	dec := ubx.NewDecoder(reader)
 	var msgCount atomic.Int64
 
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
 	for {
 		msg, err := dec.Decode()
 		if err != nil {
 			break
 		}
 		msgCount.Add(1)
+
+		// Periodic flush to reduce data loss on crash or disconnect.
+		select {
+		case <-ticker.C:
+			if rec != nil {
+				rec.Sync()
+			}
+			if csvW != nil {
+				csvW.Flush()
+			}
+		default:
+		}
 
 		// Record start position from first valid fix
 		if meta != nil {
