@@ -58,6 +58,13 @@ func (c *csvWriters) WriteMessage(msg ubx.Message) {
 	}
 }
 
+func (c *csvWriters) Flush() {
+	c.pvt.w.Flush()
+	c.sig.w.Flush()
+	c.rf.w.Flush()
+	c.rawx.w.Flush()
+}
+
 func (c *csvWriters) Close() {
 	c.pvt.Close()
 	c.sig.Close()

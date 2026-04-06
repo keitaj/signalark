@@ -32,6 +32,13 @@ func (r *recorder) Write(p []byte) (int, error) {
 	return r.file.Write(p)
 }
 
+func (r *recorder) Sync() error {
+	if r.file != nil {
+		return r.file.Sync()
+	}
+	return nil
+}
+
 func (r *recorder) Close() error {
 	if r.file != nil {
 		r.file.Sync()
