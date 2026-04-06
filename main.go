@@ -154,6 +154,7 @@ func main() {
 	dec := ubx.NewDecoder(reader)
 	var msgCount atomic.Int64
 	status := newStatusTracker()
+	gaps := newGapDetector(*measRate)
 
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
@@ -169,6 +170,7 @@ func main() {
 		switch m := msg.(type) {
 		case *ubx.NavPVT:
 			status.RecordPVT(m)
+			gaps.Check(m)
 			if meta != nil {
 				meta.RecordStartPosition(m)
 			}
@@ -198,12 +200,18 @@ func main() {
 		}
 	}
 
-	// Re-write metadata with startLat/startLon
+	// Write gap log and update metadata
 	if meta != nil {
+		meta.GapCount = gaps.GapCount()
+		meta.GapTotalMs = gaps.TotalGapMs()
 		meta.Write()
+		if *csvFlag {
+			gaps.WriteCSV(filepath.Join(*outDir, "parsed"))
+		}
 	}
 
 	fmt.Fprintf(os.Stderr, "\n\nReceived %d messages total\n", msgCount.Load())
+	gaps.PrintSummary()
 	if rec != nil {
 		fmt.Fprintf(os.Stderr, "  Raw data: %s\n", rec.SizeString())
 		if rec.WriteErrors() > 0 {

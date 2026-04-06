@@ -26,6 +26,8 @@ type metadata struct {
 	Notes      string   `json:"notes,omitempty"`
 	StartLat   float64  `json:"startLat,omitempty"`
 	StartLon   float64  `json:"startLon,omitempty"`
+	GapCount   int      `json:"gapCount,omitempty"`
+	GapTotalMs uint64   `json:"gapTotalMs,omitempty"`
 
 	dir  string
 	once sync.Once
