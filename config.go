@@ -5,11 +5,12 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/keitaj/go-ubx/pkg/ubx"
 )
 
-func configure(w io.Writer, measRateMs int) {
+func configure(rw io.ReadWriter, measRateMs int) {
 	fmt.Fprintln(os.Stderr, "Configuring receiver...")
 
 	frame := ubx.NewCfgValset(ubx.LayerRAM).
@@ -21,10 +22,55 @@ func configure(w io.Writer, measRateMs int) {
 		AddU2(ubx.KeyRateMeas, uint16(measRateMs)).
 		Build()
 
-	if _, err := w.Write(frame); err != nil {
+	if _, err := rw.Write(frame); err != nil {
 		log.Fatalf("Failed to send configuration: %v", err)
 	}
 
+	waitForAck(rw)
+
 	fmt.Fprintf(os.Stderr, "  NAV-PVT, NAV-SIG, RXM-RAWX, MON-RF, RXM-SFRBX enabled\n")
 	fmt.Fprintf(os.Stderr, "  Measurement rate: %dms (%dHz)\n", measRateMs, 1000/measRateMs)
+}
+
+// waitForAck reads UBX messages until an ACK-ACK or ACK-NAK for CFG-VALSET
+// is received, or until a 2-second timeout expires.
+func waitForAck(r io.Reader) {
+	type ackResult struct {
+		ok bool // true = ACK-ACK, false = ACK-NAK
+	}
+
+	dec := ubx.NewDecoder(r)
+	ch := make(chan ackResult, 1)
+
+	go func() {
+		for {
+			msg, err := dec.Decode()
+			if err != nil {
+				return
+			}
+			switch m := msg.(type) {
+			case *ubx.AckAck:
+				if m.AckedClass == ubx.ClassCFG && m.AckedID == ubx.IDCfgValset {
+					ch <- ackResult{ok: true}
+					return
+				}
+			case *ubx.AckNak:
+				if m.NakedClass == ubx.ClassCFG && m.NakedID == ubx.IDCfgValset {
+					ch <- ackResult{ok: false}
+					return
+				}
+			}
+		}
+	}()
+
+	select {
+	case res := <-ch:
+		if res.ok {
+			fmt.Fprintln(os.Stderr, "  CFG-VALSET accepted (ACK-ACK)")
+		} else {
+			log.Fatal("CFG-VALSET rejected by receiver (ACK-NAK)")
+		}
+	case <-time.After(2 * time.Second):
+		log.Fatal("Timeout waiting for CFG-VALSET acknowledgment")
+	}
 }
