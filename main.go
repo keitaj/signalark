@@ -42,6 +42,7 @@ func main() {
 	weather := flag.String("weather", "", "Weather: clear, cloudy, rain, snow")
 	anomaly := flag.String("anomaly", "normal", "Anomaly label: normal, spoofing, jamming")
 	notes := flag.String("notes", "", "Free-form notes (e.g., location name, conditions)")
+	itfm := flag.Bool("itfm", false, "Enable ITFM interference monitor (requires firmware support)")
 	flag.Parse()
 
 	if *measRate <= 0 {
@@ -83,7 +84,7 @@ func main() {
 	fmt.Fprintf(os.Stderr, "Connected to %s @ %d baud\n", *portName, *baudRate)
 
 	// Configure receiver
-	configure(p, *measRate)
+	configure(p, *measRate, *itfm)
 
 	// Set up output
 	var reader io.Reader = p

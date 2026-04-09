@@ -10,7 +10,7 @@ import (
 	"github.com/keitaj/go-ubx/pkg/ubx"
 )
 
-func configure(rw io.ReadWriter, measRateMs int) {
+func configure(rw io.ReadWriter, measRateMs int, enableITFM bool) {
 	fmt.Fprintln(os.Stderr, "Configuring receiver...")
 
 	// Message output and measurement rate.
@@ -30,8 +30,13 @@ func configure(rw io.ReadWriter, measRateMs int) {
 	fmt.Fprintf(os.Stderr, "  NAV-PVT, NAV-SIG, RXM-RAWX, MON-RF, RXM-SFRBX enabled\n")
 	fmt.Fprintf(os.Stderr, "  Measurement rate: %dms (%dHz)\n", measRateMs, 1000/measRateMs)
 
+	if !enableITFM {
+		return
+	}
+
 	// ITFM interference monitor (separate CFG-VALSET so a rejection
 	// does not block message output configuration).
+	// Not all firmware versions support CFG-ITFM (e.g., HPG 1.51 does not).
 	itfmFrame := ubx.NewCfgValset(ubx.LayerRAM).
 		AddU1(ubx.KeyItfmEnable, 1).
 		AddU1(ubx.KeyItfmBBThreshold, 3).
@@ -45,7 +50,7 @@ func configure(rw io.ReadWriter, measRateMs int) {
 	if waitForAckOptional(rw) {
 		fmt.Fprintln(os.Stderr, "  ITFM interference monitor enabled (active antenna)")
 	} else {
-		fmt.Fprintln(os.Stderr, "  WARNING: ITFM configuration rejected, jammingState may remain unknown")
+		fmt.Fprintln(os.Stderr, "  WARNING: ITFM configuration rejected by receiver (firmware may not support CFG-ITFM)")
 	}
 }
 
