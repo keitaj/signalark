@@ -18,6 +18,10 @@ func configure(w io.Writer, measRateMs int) {
 		AddU1(ubx.KeyMsgoutRxmRawxUSB, 1).
 		AddU1(ubx.KeyMsgoutMonRfUSB, 1).
 		AddU1(ubx.KeyMsgoutRxmSfrbxUSB, 1).
+		AddU1(ubx.KeyItfmEnable, 1).
+		AddU1(ubx.KeyItfmBBThreshold, 3).
+		AddU1(ubx.KeyItfmCWThreshold, 15).
+		AddU1(ubx.KeyItfmAntSetting, 2).
 		AddU2(ubx.KeyRateMeas, uint16(measRateMs)).
 		Build()
 
@@ -26,5 +30,6 @@ func configure(w io.Writer, measRateMs int) {
 	}
 
 	fmt.Fprintf(os.Stderr, "  NAV-PVT, NAV-SIG, RXM-RAWX, MON-RF, RXM-SFRBX enabled\n")
+	fmt.Fprintf(os.Stderr, "  ITFM interference monitor enabled (active antenna)\n")
 	fmt.Fprintf(os.Stderr, "  Measurement rate: %dms (%dHz)\n", measRateMs, 1000/measRateMs)
 }
