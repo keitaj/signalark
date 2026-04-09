@@ -34,9 +34,13 @@ func configure(rw io.ReadWriter, measRateMs int) {
 
 // waitForAck reads UBX messages until an ACK-ACK or ACK-NAK for CFG-VALSET
 // is received, or until a 2-second timeout expires.
+// NOTE: On timeout or error, log.Fatal terminates the process, so the
+// goroutine does not leak. If this is refactored to return an error,
+// use context.Context to cancel the goroutine.
 func waitForAck(r io.Reader) {
 	type ackResult struct {
-		ok bool // true = ACK-ACK, false = ACK-NAK
+		ok  bool  // true = ACK-ACK, false = ACK-NAK
+		err error // non-nil if decode failed
 	}
 
 	dec := ubx.NewDecoder(r)
@@ -46,6 +50,7 @@ func waitForAck(r io.Reader) {
 		for {
 			msg, err := dec.Decode()
 			if err != nil {
+				ch <- ackResult{err: err}
 				return
 			}
 			switch m := msg.(type) {
@@ -65,6 +70,9 @@ func waitForAck(r io.Reader) {
 
 	select {
 	case res := <-ch:
+		if res.err != nil {
+			log.Fatalf("Failed to read ACK for CFG-VALSET: %v", res.err)
+		}
 		if res.ok {
 			fmt.Fprintln(os.Stderr, "  CFG-VALSET accepted (ACK-ACK)")
 		} else {
