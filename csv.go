@@ -7,16 +7,18 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/keitaj/go-ubx/pkg/ubx"
 )
 
 // csvWriters holds all CSV writers for structured data output.
 type csvWriters struct {
-	pvt  *navPVTCSV
-	sig  *navSigCSV
-	rf   *monRFCSV
-	rawx *rxmRAWXCSV
+	pvt   *navPVTCSV
+	sig   *navSigCSV
+	rf    *monRFCSV
+	rawx  *rxmRAWXCSV
+	sfrbx *rxmSFRBXCSV
 }
 
 func newCSVWriters(dir string) (*csvWriters, error) {
@@ -42,7 +44,15 @@ func newCSVWriters(dir string) (*csvWriters, error) {
 		rf.Close()
 		return nil, err
 	}
-	return &csvWriters{pvt: pvt, sig: sig, rf: rf, rawx: rawx}, nil
+	sfrbx, err := newRxmSFRBXCSV(dir)
+	if err != nil {
+		pvt.Close()
+		sig.Close()
+		rf.Close()
+		rawx.Close()
+		return nil, err
+	}
+	return &csvWriters{pvt: pvt, sig: sig, rf: rf, rawx: rawx, sfrbx: sfrbx}, nil
 }
 
 func (c *csvWriters) WriteMessage(msg ubx.Message) {
@@ -55,6 +65,8 @@ func (c *csvWriters) WriteMessage(msg ubx.Message) {
 		c.rf.Write(m)
 	case *ubx.RxmRAWX:
 		c.rawx.Write(m)
+	case *ubx.RxmSFRBX:
+		c.sfrbx.Write(m)
 	}
 }
 
@@ -63,6 +75,7 @@ func (c *csvWriters) Flush() {
 	c.sig.w.Flush()
 	c.rf.w.Flush()
 	c.rawx.w.Flush()
+	c.sfrbx.w.Flush()
 }
 
 func (c *csvWriters) Close() {
@@ -70,6 +83,7 @@ func (c *csvWriters) Close() {
 	c.sig.Close()
 	c.rf.Close()
 	c.rawx.Close()
+	c.sfrbx.Close()
 }
 
 // --- NAV-PVT CSV ---
@@ -217,6 +231,44 @@ func (c *rxmRAWXCSV) Write(m *ubx.RxmRAWX) {
 }
 
 func (c *rxmRAWXCSV) Close() error {
+	c.w.Flush()
+	return c.f.Close()
+}
+
+// --- RXM-SFRBX CSV ---
+
+type rxmSFRBXCSV struct {
+	w *csv.Writer
+	f *os.File
+}
+
+func newRxmSFRBXCSV(dir string) (*rxmSFRBXCSV, error) {
+	f, err := createCSV(dir, "rxm_sfrbx.csv")
+	if err != nil {
+		return nil, err
+	}
+	w := csv.NewWriter(bufio.NewWriter(f))
+	w.Write([]string{"timestampMs", "gnssId", "svId", "freqId", "numWords", "dwrd"})
+	return &rxmSFRBXCSV{w: w, f: f}, nil
+}
+
+func (c *rxmSFRBXCSV) Write(m *ubx.RxmSFRBX) {
+	ts := strconv.FormatInt(nowUnixMs(), 10)
+	words := make([]string, len(m.Dwrd))
+	for i, d := range m.Dwrd {
+		words[i] = fmt.Sprintf("%08X", d)
+	}
+	c.w.Write([]string{
+		ts,
+		strconv.FormatUint(uint64(m.GnssID), 10),
+		strconv.FormatUint(uint64(m.SvID), 10),
+		strconv.FormatUint(uint64(m.FreqID), 10),
+		strconv.FormatUint(uint64(m.NumWords), 10),
+		strings.Join(words, " "),
+	})
+}
+
+func (c *rxmSFRBXCSV) Close() error {
 	c.w.Flush()
 	return c.f.Close()
 }
