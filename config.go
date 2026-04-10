@@ -5,48 +5,39 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/keitaj/go-ubx/pkg/ubx"
 )
 
-func configure(rw io.ReadWriter, measRateMs int) {
+func configure(rw io.ReadWriter, measRateMs int, msgs MessageSet) {
 	fmt.Fprintln(os.Stderr, "Configuring receiver...")
 
-	// Message output and measurement rate.
-	msgFrame := ubx.NewCfgValset(ubx.LayerRAM).
-		AddU1(ubx.KeyMsgoutNavPvtUSB, 1).
-		AddU1(ubx.KeyMsgoutNavSigUSB, 1).
-		AddU1(ubx.KeyMsgoutRxmRawxUSB, 1).
-		AddU1(ubx.KeyMsgoutMonRfUSB, 1).
-		AddU1(ubx.KeyMsgoutRxmSfrbxUSB, 1).
-		AddU2(ubx.KeyRateMeas, uint16(measRateMs)).
-		Build()
+	b := ubx.NewCfgValset(ubx.LayerRAM)
+	if msgs.NavPVT {
+		b.AddU1(ubx.KeyMsgoutNavPvtUSB, 1)
+	}
+	if msgs.NavSig {
+		b.AddU1(ubx.KeyMsgoutNavSigUSB, 1)
+	}
+	if msgs.MonRF {
+		b.AddU1(ubx.KeyMsgoutMonRfUSB, 1)
+	}
+	if msgs.RxmRAWX {
+		b.AddU1(ubx.KeyMsgoutRxmRawxUSB, 1)
+	}
+	if msgs.RxmSFRBX {
+		b.AddU1(ubx.KeyMsgoutRxmSfrbxUSB, 1)
+	}
+	b.AddU2(ubx.KeyRateMeas, uint16(measRateMs))
 
-	if _, err := rw.Write(msgFrame); err != nil {
+	if _, err := rw.Write(b.Build()); err != nil {
 		log.Fatalf("Failed to send configuration: %v", err)
 	}
 	waitForAck(rw)
-	fmt.Fprintf(os.Stderr, "  NAV-PVT, NAV-SIG, RXM-RAWX, MON-RF, RXM-SFRBX enabled\n")
+	fmt.Fprintf(os.Stderr, "  Enabled: %s\n", strings.Join(msgs.Names(), ", "))
 	fmt.Fprintf(os.Stderr, "  Measurement rate: %dms (%dHz)\n", measRateMs, 1000/measRateMs)
-
-	// ITFM interference monitor (separate CFG-VALSET so a rejection
-	// does not block message output configuration).
-	itfmFrame := ubx.NewCfgValset(ubx.LayerRAM).
-		AddU1(ubx.KeyItfmEnable, 1).
-		AddU1(ubx.KeyItfmBBThreshold, 3).
-		AddU1(ubx.KeyItfmCWThreshold, 15).
-		AddU1(ubx.KeyItfmAntSetting, 2).
-		Build()
-
-	if _, err := rw.Write(itfmFrame); err != nil {
-		log.Fatalf("Failed to send ITFM configuration: %v", err)
-	}
-	if waitForAckOptional(rw) {
-		fmt.Fprintln(os.Stderr, "  ITFM interference monitor enabled (active antenna)")
-	} else {
-		fmt.Fprintln(os.Stderr, "  WARNING: ITFM configuration rejected, jammingState may remain unknown")
-	}
 }
 
 // waitForAckOptional is like waitForAck but returns false on NAK or timeout
