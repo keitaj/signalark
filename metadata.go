@@ -33,13 +33,13 @@ type metadata struct {
 	once sync.Once
 }
 
-func newMetadata(dir, portName string, baudRate, measRateMs int, antenna, mobility, skyvis, weather, anomaly, notes string) *metadata {
+func newMetadata(dir, portName string, baudRate, measRateMs int, msgs []string, antenna, mobility, skyvis, weather, anomaly, notes string) *metadata {
 	return &metadata{
 		StartTime:  time.Now().UTC().Format(time.RFC3339),
 		Port:       portName,
 		BaudRate:   baudRate,
 		MeasRateMs: measRateMs,
-		Messages:   []string{"NAV-PVT", "NAV-SIG", "RXM-RAWX", "MON-RF", "RXM-SFRBX"},
+		Messages:   msgs,
 		Antenna:    antenna,
 		Mobility:   mobility,
 		Skyvis:     skyvis,

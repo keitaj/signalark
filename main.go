@@ -42,6 +42,7 @@ func main() {
 	weather := flag.String("weather", "", "Weather: clear, cloudy, rain, snow")
 	anomaly := flag.String("anomaly", "normal", "Anomaly label: normal, spoofing, jamming")
 	notes := flag.String("notes", "", "Free-form notes (e.g., location name, conditions)")
+	messages := flag.String("messages", "nav-pvt,nav-sig,mon-rf,rxm-rawx", "Comma-separated UBX messages to enable (nav-pvt,nav-sig,mon-rf,rxm-rawx,rxm-sfrbx)")
 	flag.Parse()
 
 	if *measRate <= 0 {
@@ -82,8 +83,11 @@ func main() {
 	defer p.Close()
 	fmt.Fprintf(os.Stderr, "Connected to %s @ %d baud\n", *portName, *baudRate)
 
+	// Parse message list
+	msgSet := parseMessages(*messages)
+
 	// Configure receiver
-	configure(p, *measRate)
+	configure(p, *measRate, msgSet)
 
 	// Set up output
 	var reader io.Reader = p
@@ -121,7 +125,7 @@ func main() {
 		}
 
 		// Metadata
-		meta = newMetadata(*outDir, *portName, *baudRate, *measRate, *antenna, *mobility, *skyvis, *weather, *anomaly, *notes)
+		meta = newMetadata(*outDir, *portName, *baudRate, *measRate, msgSet.Names(), *antenna, *mobility, *skyvis, *weather, *anomaly, *notes)
 		if err := meta.Write(); err != nil {
 			log.Fatalf("Failed to write metadata: %v", err)
 		}
