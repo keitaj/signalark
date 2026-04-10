@@ -41,9 +41,17 @@ var validMessages = map[string]bool{
 }
 
 func parseMessages(s string) MessageSet {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		log.Fatal("-messages must not be empty (valid: nav-pvt, nav-sig, mon-rf, rxm-rawx, rxm-sfrbx)")
+	}
 	var ms MessageSet
 	for _, name := range strings.Split(s, ",") {
 		name = strings.TrimSpace(strings.ToLower(name))
+		if name == "" {
+			continue
+		}
+		// validMessages and switch must stay in sync when adding new message types.
 		if !validMessages[name] {
 			log.Fatalf("Unknown message type: %q (valid: nav-pvt, nav-sig, mon-rf, rxm-rawx, rxm-sfrbx)", name)
 		}
