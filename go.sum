@@ -1,2 +1,2 @@
-github.com/keitaj/go-ubx v0.0.0-20260409013925-858180452cd7 h1:ohuRGSP5lLKi9Pwz9hI7TjnT8iIz+uJ6Rx38a9qk4PI=
-github.com/keitaj/go-ubx v0.0.0-20260409013925-858180452cd7/go.mod h1:aENZj5kxsv0McPY0+cZ4n21A/aq/QiBiNt42/qsWgGw=
+github.com/keitaj/go-ubx v0.1.0 h1:RmDr8OiuySdGXj1nUYPUojRqSQvRKYAQyd1JUOBhhuc=
+github.com/keitaj/go-ubx v0.1.0/go.mod h1:aENZj5kxsv0McPY0+cZ4n21A/aq/QiBiNt42/qsWgGw=
