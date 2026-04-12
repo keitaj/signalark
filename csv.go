@@ -148,7 +148,7 @@ func newNavSATCSV(dir string) (*navSATCSV, error) {
 	if err != nil {
 		return nil, err
 	}
-	w := csv.NewWriter(f)
+	w := csv.NewWriter(bufio.NewWriter(f))
 	w.Write([]string{"itow", "gnssId", "svId", "cno", "elev", "azim", "prRes", "svUsed", "health"})
 	return &navSATCSV{w: w, f: f}, nil
 }
