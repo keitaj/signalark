@@ -78,10 +78,11 @@ Single-package (`main`) CLI application. All source files are in the project roo
 
 ## Key Patterns
 
-- **Adding a new UBX message type**: Update `messages.go` (MessageSet, validMessages, parseMessages, Names), `config.go` (CFG-VALSET key), `csv.go` (new CSV writer struct + integrate into csvWriters), and `main.go` (default flag value).
+- **Adding a new UBX message type**: Update `messages.go` (MessageSet, validMessages, parseMessages, Names), `config.go` (CFG-VALSET key), `csv.go` (new CSV writer struct + integrate into csvWriters), `main.go` (default flag value), and `README.md` (Features list, Output Structure tree, Flags table).
 - **CSV writers**: Each writer is a struct with `*csv.Writer` and `*os.File`. Use `bufio.NewWriter(f)` when creating the `csv.Writer`. Follow the existing `newXxxCSV` / `Write` / `Close` pattern.
 - **Error cleanup in `newCSVWriters`**: On error, close all previously opened writers before returning.
 - **Platform serial code**: Build-tagged files (`serial_darwin.go`, `serial_linux.go`) provide baud rate constants. Shared logic lives in `serial_unix.go`.
+- **Updating README.md**: Keep `README.md` in sync with code changes. When adding features, flags, or message types, update the Features list, Output Structure tree, and Flags table accordingly.
 
 ## Dependencies
 

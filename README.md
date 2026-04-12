@@ -8,7 +8,8 @@ Built on [go-ubx](https://github.com/keitaj/go-ubx).
 
 - Raw UBX binary recording with auto-generated timestamped filenames
 - File rotation (`-rotate 1h` for hourly splits)
-- Structured CSV output for NAV-PVT, NAV-SIG, MON-RF, RXM-RAWX
+- Structured CSV output for NAV-PVT, NAV-SAT, NAV-SIG, MON-RF, RXM-RAWX, RXM-SFRBX
+- Configurable message selection (`-messages` flag)
 - Session labels for ML training data (`-mobility`, `-skyvis`, `-weather`, `-anomaly`)
 - Auto-recorded start position (lat/lon from first NAV-PVT fix)
 - Periodic status display (epochs, fix rate, CN0, file size every 10s)
@@ -16,7 +17,7 @@ Built on [go-ubx](https://github.com/keitaj/go-ubx).
 - Write error logging with running count
 - Metadata recording (`metadata.json`)
 - Serial port auto-detection (Linux `/dev/ttyACM*`, macOS `/dev/cu.usbmodem*`)
-- Receiver auto-configuration (enables NAV-PVT, NAV-SIG, RXM-RAWX, MON-RF, RXM-SFRBX)
+- Receiver auto-configuration (enables selected UBX messages via CFG-VALSET)
 
 ## Usage
 
@@ -54,9 +55,12 @@ session_001/
 │   └── gnss_20260407_130000.ubx
 ├── parsed/
 │   ├── nav_pvt.csv                # Position, velocity, time
+│   ├── nav_sat.csv                # Per-satellite elevation, azimuth, CN0
 │   ├── nav_sig.csv                # Per-signal quality and health
 │   ├── mon_rf.csv                 # RF/jamming indicators
-│   └── rxm_rawx.csv              # Raw measurements
+│   ├── rxm_rawx.csv              # Raw measurements
+│   ├── rxm_sfrbx.csv             # Navigation subframe data
+│   └── gaps.csv                   # Data gap log (if gaps detected)
 └── metadata.json                  # Collection conditions + session labels
 ```
 
@@ -77,6 +81,7 @@ session_001/
 | `-skyvis` | | Sky visibility: `open`, `suburban`, `urban`, `canyon`, `indoor`, `tunnel` |
 | `-weather` | | Weather: `clear`, `cloudy`, `rain`, `snow` |
 | `-anomaly` | `normal` | Anomaly label: `normal`, `spoofing`, `jamming` |
+| `-messages` | `nav-pvt,nav-sat,nav-sig,mon-rf,rxm-rawx,rxm-sfrbx` | Comma-separated UBX messages to enable |
 | `-notes` | | Free-form notes (location name, conditions, etc.) |
 
 ## Install
