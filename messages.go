@@ -8,6 +8,7 @@ import (
 // MessageSet tracks which UBX messages are enabled.
 type MessageSet struct {
 	NavPVT   bool
+	NavSAT   bool
 	NavSig   bool
 	MonRF    bool
 	RxmRAWX  bool
@@ -19,6 +20,9 @@ func (m MessageSet) Names() []string {
 	var names []string
 	if m.NavPVT {
 		names = append(names, "NAV-PVT")
+	}
+	if m.NavSAT {
+		names = append(names, "NAV-SAT")
 	}
 	if m.NavSig {
 		names = append(names, "NAV-SIG")
@@ -36,14 +40,14 @@ func (m MessageSet) Names() []string {
 }
 
 var validMessages = map[string]bool{
-	"nav-pvt": true, "nav-sig": true, "mon-rf": true,
+	"nav-pvt": true, "nav-sat": true, "nav-sig": true, "mon-rf": true,
 	"rxm-rawx": true, "rxm-sfrbx": true,
 }
 
 func parseMessages(s string) MessageSet {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		log.Fatal("-messages must not be empty (valid: nav-pvt, nav-sig, mon-rf, rxm-rawx, rxm-sfrbx)")
+		log.Fatal("-messages must not be empty (valid: nav-pvt, nav-sat, nav-sig, mon-rf, rxm-rawx, rxm-sfrbx)")
 	}
 	var ms MessageSet
 	for _, name := range strings.Split(s, ",") {
@@ -53,11 +57,13 @@ func parseMessages(s string) MessageSet {
 		}
 		// validMessages and switch must stay in sync when adding new message types.
 		if !validMessages[name] {
-			log.Fatalf("Unknown message type: %q (valid: nav-pvt, nav-sig, mon-rf, rxm-rawx, rxm-sfrbx)", name)
+			log.Fatalf("Unknown message type: %q (valid: nav-pvt, nav-sat, nav-sig, mon-rf, rxm-rawx, rxm-sfrbx)", name)
 		}
 		switch name {
 		case "nav-pvt":
 			ms.NavPVT = true
+		case "nav-sat":
+			ms.NavSAT = true
 		case "nav-sig":
 			ms.NavSig = true
 		case "mon-rf":

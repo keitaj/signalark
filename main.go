@@ -42,7 +42,7 @@ func main() {
 	weather := flag.String("weather", "", "Weather: clear, cloudy, rain, snow")
 	anomaly := flag.String("anomaly", "normal", "Anomaly label: normal, spoofing, jamming")
 	notes := flag.String("notes", "", "Free-form notes (e.g., location name, conditions)")
-	messages := flag.String("messages", "nav-pvt,nav-sig,mon-rf,rxm-rawx,rxm-sfrbx", "Comma-separated UBX messages to enable (nav-pvt,nav-sig,mon-rf,rxm-rawx,rxm-sfrbx)")
+	messages := flag.String("messages", "nav-pvt,nav-sat,nav-sig,mon-rf,rxm-rawx,rxm-sfrbx", "Comma-separated UBX messages to enable (nav-pvt,nav-sat,nav-sig,mon-rf,rxm-rawx,rxm-sfrbx)")
 	flag.Parse()
 
 	if *measRate <= 0 {

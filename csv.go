@@ -15,6 +15,7 @@ import (
 // csvWriters holds all CSV writers for structured data output.
 type csvWriters struct {
 	pvt   *navPVTCSV
+	sat   *navSATCSV
 	sig   *navSigCSV
 	rf    *monRFCSV
 	rawx  *rxmRAWXCSV
@@ -26,20 +27,28 @@ func newCSVWriters(dir string) (*csvWriters, error) {
 	if err != nil {
 		return nil, err
 	}
+	sat, err := newNavSATCSV(dir)
+	if err != nil {
+		pvt.Close()
+		return nil, err
+	}
 	sig, err := newNavSigCSV(dir)
 	if err != nil {
 		pvt.Close()
+		sat.Close()
 		return nil, err
 	}
 	rf, err := newMonRFCSV(dir)
 	if err != nil {
 		pvt.Close()
+		sat.Close()
 		sig.Close()
 		return nil, err
 	}
 	rawx, err := newRxmRAWXCSV(dir)
 	if err != nil {
 		pvt.Close()
+		sat.Close()
 		sig.Close()
 		rf.Close()
 		return nil, err
@@ -47,18 +56,21 @@ func newCSVWriters(dir string) (*csvWriters, error) {
 	sfrbx, err := newRxmSFRBXCSV(dir)
 	if err != nil {
 		pvt.Close()
+		sat.Close()
 		sig.Close()
 		rf.Close()
 		rawx.Close()
 		return nil, err
 	}
-	return &csvWriters{pvt: pvt, sig: sig, rf: rf, rawx: rawx, sfrbx: sfrbx}, nil
+	return &csvWriters{pvt: pvt, sat: sat, sig: sig, rf: rf, rawx: rawx, sfrbx: sfrbx}, nil
 }
 
 func (c *csvWriters) WriteMessage(msg ubx.Message) {
 	switch m := msg.(type) {
 	case *ubx.NavPVT:
 		c.pvt.Write(m)
+	case *ubx.NavSAT:
+		c.sat.Write(m)
 	case *ubx.NavSig:
 		c.sig.Write(m)
 	case *ubx.MonRF:
@@ -72,6 +84,7 @@ func (c *csvWriters) WriteMessage(msg ubx.Message) {
 
 func (c *csvWriters) Flush() {
 	c.pvt.w.Flush()
+	c.sat.w.Flush()
 	c.sig.w.Flush()
 	c.rf.w.Flush()
 	c.rawx.w.Flush()
@@ -80,6 +93,7 @@ func (c *csvWriters) Flush() {
 
 func (c *csvWriters) Close() {
 	c.pvt.Close()
+	c.sat.Close()
 	c.sig.Close()
 	c.rf.Close()
 	c.rawx.Close()
@@ -118,6 +132,49 @@ func (c *navPVTCSV) Write(m *ubx.NavPVT) {
 }
 
 func (c *navPVTCSV) Close() error {
+	c.w.Flush()
+	return c.f.Close()
+}
+
+// --- NAV-SAT CSV ---
+
+type navSATCSV struct {
+	w *csv.Writer
+	f *os.File
+}
+
+func newNavSATCSV(dir string) (*navSATCSV, error) {
+	f, err := createCSV(dir, "nav_sat.csv")
+	if err != nil {
+		return nil, err
+	}
+	w := csv.NewWriter(bufio.NewWriter(f))
+	w.Write([]string{"itow", "gnssId", "svId", "cno", "elev", "azim", "prRes", "svUsed", "health"})
+	return &navSATCSV{w: w, f: f}, nil
+}
+
+func (c *navSATCSV) Write(m *ubx.NavSAT) {
+	itow := strconv.FormatUint(uint64(m.ITOW), 10)
+	for _, sv := range m.Svs {
+		svUsed := "0"
+		if sv.SvUsed() {
+			svUsed = "1"
+		}
+		c.w.Write([]string{
+			itow,
+			strconv.FormatUint(uint64(sv.GnssID), 10),
+			strconv.FormatUint(uint64(sv.SvID), 10),
+			strconv.FormatUint(uint64(sv.CNO), 10),
+			strconv.FormatInt(int64(sv.Elev), 10),
+			strconv.FormatInt(int64(sv.Azim), 10),
+			strconv.FormatFloat(sv.PrResM(), 'f', 1, 64),
+			svUsed,
+			strconv.FormatUint(uint64(sv.Health()), 10),
+		})
+	}
+}
+
+func (c *navSATCSV) Close() error {
 	c.w.Flush()
 	return c.f.Close()
 }

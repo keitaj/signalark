@@ -25,6 +25,7 @@ func configure(rw io.ReadWriter, measRateMs int, msgs MessageSet) {
 	// configuration from a prior run does not produce unexpected output.
 	b := ubx.NewCfgValset(ubx.LayerRAM).
 		AddU1(ubx.KeyMsgoutNavPvtUSB, boolToRate(msgs.NavPVT)).
+		AddU1(ubx.KeyMsgoutNavSatUSB, boolToRate(msgs.NavSAT)).
 		AddU1(ubx.KeyMsgoutNavSigUSB, boolToRate(msgs.NavSig)).
 		AddU1(ubx.KeyMsgoutMonRfUSB, boolToRate(msgs.MonRF)).
 		AddU1(ubx.KeyMsgoutRxmRawxUSB, boolToRate(msgs.RxmRAWX)).
