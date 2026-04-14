@@ -1,0 +1,12 @@
+{
+  "startTime": "2026-04-14T00:00:00Z",
+  "port": "/dev/cu.usbmodem3101",
+  "baudRate": 115200,
+  "measRateMs": 1000,
+  "messages": ["NAV-PVT", "NAV-SAT", "NAV-SIG", "MON-RF", "RXM-RAWX", "RXM-SFRBX"],
+  "mobility": "static",
+  "skyvis": "open",
+  "weather": "clear",
+  "anomaly": "normal",
+  "notes": "test data extracted from session_029 (first 10 epochs)"
+}
