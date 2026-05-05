@@ -10,11 +10,11 @@ import (
 
 // statusTracker tracks running statistics for periodic status display.
 type statusTracker struct {
-	start     time.Time
-	epochs    int64
-	fixEpochs int64
-	cnoSum    uint64
-	cnoCount  uint64
+	start      time.Time
+	epochs     int64
+	fixEpochs  int64
+	cnoSum     uint64
+	cnoCount   uint64
 	lastCnoAvg float64
 }
 
