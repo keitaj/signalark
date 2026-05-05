@@ -29,7 +29,14 @@ func configure(rw io.ReadWriter, measRateMs int, msgs MessageSet) {
 		AddU1(ubx.KeyMsgoutNavSigUSB, boolToRate(msgs.NavSig)).
 		AddU1(ubx.KeyMsgoutMonRfUSB, boolToRate(msgs.MonRF)).
 		AddU1(ubx.KeyMsgoutRxmRawxUSB, boolToRate(msgs.RxmRAWX)).
-		AddU1(ubx.KeyMsgoutRxmSfrbxUSB, boolToRate(msgs.RxmSFRBX))
+		AddU1(ubx.KeyMsgoutRxmSfrbxUSB, boolToRate(msgs.RxmSFRBX)).
+		// Without ITFM enabled, MON-RF.jammingState reports "unknown" for the
+		// entire session. Defaults match the u-blox F9 HPG interface description
+		// (BB=3 dB, CW=15 dB, active antenna).
+		AddU1(ubx.KeyItfmEnable, 1).
+		AddU1(ubx.KeyItfmAntSetting, 2).
+		AddU1(ubx.KeyItfmBBThreshold, 3).
+		AddU1(ubx.KeyItfmCWThreshold, 15)
 	b.AddU2(ubx.KeyRateMeas, uint16(measRateMs))
 
 	if _, err := rw.Write(b.Build()); err != nil {
@@ -38,6 +45,7 @@ func configure(rw io.ReadWriter, measRateMs int, msgs MessageSet) {
 	waitForAck(rw)
 	fmt.Fprintf(os.Stderr, "  Enabled: %s\n", strings.Join(msgs.Names(), ", "))
 	fmt.Fprintf(os.Stderr, "  Measurement rate: %dms (%dHz)\n", measRateMs, 1000/measRateMs)
+	fmt.Fprintln(os.Stderr, "  ITFM: enabled (active antenna, BB=3dB, CW=15dB)")
 }
 
 // waitForAck reads UBX messages until an ACK-ACK or ACK-NAK for CFG-VALSET
