@@ -9,12 +9,12 @@ import (
 
 // recorder writes raw UBX bytes to timestamped files with optional rotation.
 type recorder struct {
-	dir        string
-	rotate     time.Duration
-	file       *os.File
-	openedAt   time.Time
-	written    int64 // total bytes written across all files
-	writeErrs  int   // total write error count
+	dir       string
+	rotate    time.Duration
+	file      *os.File
+	openedAt  time.Time
+	written   int64 // total bytes written across all files
+	writeErrs int   // total write error count
 }
 
 func newRecorder(dir string, rotate time.Duration) (*recorder, error) {
