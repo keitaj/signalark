@@ -18,7 +18,6 @@ Built on [go-ubx](https://github.com/keitaj/go-ubx).
 - Metadata recording (`metadata.json`)
 - Serial port auto-detection (Linux `/dev/ttyACM*`, macOS `/dev/cu.usbmodem*`)
 - Receiver auto-configuration (enables selected UBX messages via CFG-VALSET)
-- Interference monitor (ITFM) enabled by default so `MON-RF.jammingState` reports `ok`/`warning`/`critical` instead of `unknown`
 
 ## Usage
 
