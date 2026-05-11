@@ -43,6 +43,7 @@ func main() {
 	anomaly := flag.String("anomaly", "normal", "Anomaly label: normal, spoofing, jamming")
 	notes := flag.String("notes", "", "Free-form notes (e.g., location name, conditions)")
 	messages := flag.String("messages", "nav-pvt,nav-sat,nav-sig,mon-rf,rxm-rawx,rxm-sfrbx", "Comma-separated UBX messages to enable (nav-pvt,nav-sat,nav-sig,mon-rf,rxm-rawx,rxm-sfrbx)")
+	diagItfmFlag := flag.Bool("diag-itfm", false, "Diagnostic: send each CFG-ITFM-* key as its own VALSET, log ACK/NAK, exit")
 	flag.Parse()
 
 	if *measRate <= 0 {
@@ -82,6 +83,12 @@ func main() {
 	}
 	defer p.Close()
 	fmt.Fprintf(os.Stderr, "Connected to %s @ %d baud\n", *portName, *baudRate)
+
+	// Diagnostic mode: bisect ITFM keys and exit.
+	if *diagItfmFlag {
+		diagItfm(p)
+		return
+	}
 
 	// Parse message list
 	msgSet := parseMessages(*messages)
